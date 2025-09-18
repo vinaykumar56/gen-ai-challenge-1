@@ -1,6 +1,8 @@
 from langchain_docling import DoclingLoader
 from langchain_community.document_loaders import DirectoryLoader
 from pathlib import Path
+import warnings
+warnings.filterwarnings("ignore")
 
 # Function to process all pptx files in a directory
 def process_all_pptx(directory_path: str):

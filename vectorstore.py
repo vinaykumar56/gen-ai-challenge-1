@@ -4,6 +4,10 @@ import os
 import numpy as np
 import uuid
 from typing import List, Any
+import json
+import warnings
+warnings.filterwarnings("ignore")
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
 
 class VectorStore:
     def __init__(self, collection_name: str="pptx_docs", persist_directory: str="./data/vector_store"):
@@ -85,10 +89,22 @@ class VectorStore:
         metadatas = []
         contents = []
         ids = []
-        for i, doc in docs:
+        for i, doc in enumerate(docs):
             doc_id = f"doc_{uuid.uuid4().hex[:8]}_{i}"
             ids.append(doc_id)
-            metadatas.append(dict(doc.metadata))
+            #Prepare metadata
+             # Flatten metadata: convert non-primitive values to strings
+            meta = {}
+            for k, v in dict(doc.metadata).items():
+                if isinstance(v, (str, int, float, bool)) or v is None:
+                    meta[k] = v
+                else:
+                    meta[k] = json.dumps(v)
+
+            meta['doc_index'] = i
+            meta['content_length'] = len(doc.page_content)
+            metadatas.append(meta)
+            # metadatas.append(doc.metadata)
             contents.append(doc.page_content)
         self.collection.add(
             ids=ids,
