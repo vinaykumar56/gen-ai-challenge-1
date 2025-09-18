@@ -24,6 +24,7 @@ class Embedder:
             raise ValueError("Model is not loaded. Call _load_model() first.")
     
         embeddings = self.model.encode(texts, show_progress_bar=True)
+        print(f"Generated embeddings for {len(texts)} texts.")
         return embeddings
     
     

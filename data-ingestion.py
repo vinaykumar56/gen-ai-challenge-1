@@ -50,9 +50,11 @@ embeddder = Embedder()
 embeddder
 ##Generate the Embeddings
 embeddings = embeddder.generate_embeddings(texts)
+print("Generated embeddings with shape:"+embeddings.shape)
 
 ##store into a vector db
 from vectorstore import VectorStore
 vectorstore = VectorStore()
 vectorstore
 vectorstore.add_docs(chunks, embeddings)
+print("Total documents in the vectorstore:"+str(vectorstore.collection.count()))
