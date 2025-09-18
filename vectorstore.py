@@ -1,0 +1,98 @@
+import chromadb
+# from chromadb.config import Settings  # Removed unused import
+import os
+import numpy as np
+import uuid
+from typing import List, Any
+
+class VectorStore:
+    def __init__(self, collection_name: str="pptx_docs", persist_directory: str="./data/vector_store"):
+        """Initialize the vector store.
+        Args:
+            collection_name (str): Name of the collection in the vector store.
+            persist_directory (str): Directory to persist the vector store.
+        """
+        self.collection_name = collection_name
+        self.persist_directory = persist_directory
+        self.client = None
+        self.collection = None
+        self._initialize_store()
+
+    def _initialize_store(self):
+        """Initialize the ChromaDB client and collection."""
+        # create persist directory if not exists
+        if not os.path.exists(self.persist_directory):
+            os.makedirs(self.persist_directory, exist_ok=True)
+        
+        # Initialize persistent ChromaDB client
+        self.client = chromadb.PersistentClient(path=self.persist_directory)
+        
+        #Get or create collection
+        self.collection = self.client.get_or_create_collection(name=self.collection_name, metadata={"description":"pptx docs embeddings for RAG"})
+        print(f"Collection {self.collection_name} initialized in {self.persist_directory}")
+
+    
+    # def add_docs(self, documents: list[Any], embeddings: np.ndarray):
+    #     """Add documents and their embeddings to the vector store.
+    #     Args:
+    #         documents (list): List of langchain document.
+    #         embeddings (list): List of corresponding embeddings.
+    #     """
+    #     if len(documents) != len(embeddings):
+    #         raise ValueError("Documents and embeddings must have the same length.")
+        
+    #     print(f"Adding {len(documents)} documents to the collection {self.collection_name}.")
+        
+    #     # Prepare data for ChormaDB
+    #     ids = []
+    #     metadata = []
+    #     documents_text = []
+    #     embeddings_list = []
+    #     for i, (doc, emb) in enumerate(zip(documents, embeddings)):
+    #         doc_id = f"doc_{uuid.uuid4().hex[:8]}_{i}"
+    #         ids.append(doc_id)
+    #         #Prepare metadata
+    #         metadata=dict(doc.metadata)
+    #         metadata['doc_index'] = i
+    #         metadata['content_length'] = len(doc.page_content)
+    #         metadata.append(metadata)
+    #         #document content
+    #         documents_text.append(doc.page_content)
+    #         #embedding
+    #         embeddings_list.append(emb.tolist())
+            
+    #     # Add to collection
+    #     try:
+    #         self.collection.add(
+    #             ids=ids,
+    #             documents=documents_text,
+    #             embeddings=embeddings_list,
+    #             metadatas=metadata
+    #         )
+    #         print(f"Successfully added {len(documents)} documents to the collection {self.collection_name}.")
+
+    #     except Exception as e:
+    #         print(f"Error adding documents to the collection: {e}")
+    #         raise
+
+    def add_docs(self, docs, embeddings):
+        """
+        Add documents and their embeddings to the vector store.
+        Args:
+            docs (list): List of document objects with metadata.
+            embeddings (list): List of embedding vectors.
+        """
+        metadatas = []
+        contents = []
+        ids = []
+        for i, doc in docs:
+            doc_id = f"doc_{uuid.uuid4().hex[:8]}_{i}"
+            ids.append(doc_id)
+            metadatas.append(dict(doc.metadata))
+            contents.append(doc.page_content)
+        self.collection.add(
+            ids=ids,
+            documents=contents,
+            embeddings=embeddings,
+            metadatas=metadatas
+        )
