@@ -79,6 +79,16 @@ class VectorStore:
     #         print(f"Error adding documents to the collection: {e}")
     #         raise
 
+
+    def create_id(self, doc, index):
+        file_path = doc.metadata.get('file_path', 'unknown')
+        slide_idx = doc.metadata.get('slide_index', index)
+        doc_id = f"{file_path}_slide_{slide_idx}"
+        # print(f"File path from metadata: {file_path}")
+        # print(f"Slide index from metadata: {slide_idx}")
+        # print(f"Generated document ID: {doc_id}")
+        return doc_id
+    
     def add_docs(self, docs, embeddings):
         """
         Add documents and their embeddings to the vector store.
@@ -90,8 +100,8 @@ class VectorStore:
         contents = []
         ids = []
         for i, doc in enumerate(docs):
-            doc_id = f"doc_{uuid.uuid4().hex[:8]}_{i}"
-            ids.append(doc_id)
+            # doc_id = f"doc_{uuid.uuid4().hex[:8]}_{i}"
+            ids.append(self.create_id(doc, i))
             #Prepare metadata
              # Flatten metadata: convert non-primitive values to strings
             meta = {}
@@ -106,6 +116,20 @@ class VectorStore:
             metadatas.append(meta)
             # metadatas.append(doc.metadata)
             contents.append(doc.page_content)
+
+            # Check which IDs already exist in the collection
+            existing = set(self.collection.get(ids=ids)["ids"])
+            new_ids, new_docs, new_embeds, new_metas = [], [], [], []
+            for idx, doc_id in enumerate(ids):
+                if doc_id in existing:
+                    # Optionally, delete the old entry before updating
+                    self.collection.delete(ids=[doc_id])
+                new_ids.append(doc_id)
+            new_docs.append(contents[idx])
+            new_embeds.append(embeddings[idx])
+            new_metas.append(metadatas[idx])
+
+         # Add only new or updated docs
         self.collection.add(
             ids=ids,
             documents=contents,

@@ -5,3 +5,10 @@ langchain_docling
 sentence-transformers
 faiss-cpu
 chromadb
+streamlit
+ollama
+langchain_ollama
+requests
+numpy
+uuid
+
